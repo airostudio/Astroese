@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AstroPalm — Astrology & Palm Reading</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">✦</div>
+      <div>
+        <div class="title">AstroPalm</div>
+        <div class="subtitle">Astrology + Palm Reading (Entertainment)</div>
+      </div>
+    </div>
+
+    <button id="btnPremium" class="pill">Premium: <span id="premiumState">OFF</span></button>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-route="palm">Palm Scan</button>
+    <button class="tab" data-route="horoscope">Horoscope</button>
+    <button class="tab" data-route="compat">Compatibility</button>
+    <button class="tab" data-route="live">Live Experts</button>
+    <button class="tab" data-route="profile">Profile</button>
+  </nav>
+
+  <main class="container">
+    <!-- PALM -->
+    <section class="view" id="view-palm">
+      <h1>AI Palm Scan</h1>
+      <p class="hint">
+        Upload or take a photo of your palm. Results are for entertainment.
+      </p>
+
+      <div class="card">
+        <div class="row">
+          <input id="palmInput" type="file" accept="image/*" capture="environment" />
+          <button id="btnAnalyzePalm" class="primary">Analyze Palm</button>
+        </div>
+
+        <div class="split">
+          <div class="panel">
+            <h3>Preview</h3>
+            <div class="previewWrap">
+              <img id="palmPreview" alt="Palm preview" />
+              <canvas id="palmOverlay"></canvas>
+            </div>
+            <div class="tiny muted">Tip: Use good lighting and keep the palm centered.</div>
+          </div>
+
+          <div class="panel">
+            <h3>Your Reading</h3>
+            <div id="palmResult" class="result muted">
+              Upload a palm photo to begin.
+            </div>
+            <div class="paywall" id="palmPaywall">
+              <div class="paywallText">
+                Premium unlocks deeper line details + "year ahead" forecast.
+              </div>
+              <button class="secondary" id="btnUnlockPalm">Unlock Premium Palm ($2.99)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="disclaimer">
+        <strong>Disclaimer:</strong> This platform provides entertainment content only and does not offer medical, legal, or financial advice.
+      </div>
+    </section>
+
+    <!-- HOROSCOPE -->
+    <section class="view hidden" id="view-horoscope">
+      <h1>Daily Horoscope</h1>
+      <div class="card">
+        <div class="row">
+          <label class="field">
+            <span>Zodiac sign</span>
+            <select id="signSelect">
+              <option value="aries">Aries</option>
+              <option value="taurus">Taurus</option>
+              <option value="gemini">Gemini</option>
+              <option value="cancer">Cancer</option>
+              <option value="leo">Leo</option>
+              <option value="virgo">Virgo</option>
+              <option value="libra">Libra</option>
+              <option value="scorpio">Scorpio</option>
+              <option value="sagittarius">Sagittarius</option>
+              <option value="capricorn">Capricorn</option>
+              <option value="aquarius">Aquarius</option>
+              <option value="pisces">Pisces</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Focus</span>
+            <select id="focusSelect">
+              <option value="general">General</option>
+              <option value="love">Love</option>
+              <option value="career">Career</option>
+              <option value="wellbeing">Wellbeing</option>
+            </select>
+          </label>
+
+          <button id="btnGetHoroscope" class="primary">Get Today's Reading</button>
+        </div>
+
+        <div class="split">
+          <div class="panel">
+            <h3>Free</h3>
+            <div id="horoFree" class="result muted">Pick your sign and tap "Get".</div>
+          </div>
+          <div class="panel">
+            <h3>Premium</h3>
+            <div id="horoPremium" class="result muted">Premium is off.</div>
+            <div class="paywall" id="horoPaywall">
+              <div class="paywallText">Premium adds a deeper message + lucky cues.</div>
+              <button class="secondary" id="btnUnlockHoro">Unlock Premium Horoscope ($1.99)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMPAT -->
+    <section class="view hidden" id="view-compat">
+      <h1>Compatibility</h1>
+      <div class="card">
+        <div class="row">
+          <label class="field">
+            <span>You</span>
+            <select id="compatA"></select>
+          </label>
+          <label class="field">
+            <span>Them</span>
+            <select id="compatB"></select>
+          </label>
+          <label class="field">
+            <span>Mode</span>
+            <select id="compatMode">
+              <option value="love">Love</option>
+              <option value="friendship">Friendship</option>
+              <option value="work">Work</option>
+            </select>
+          </label>
+          <button id="btnCompat" class="primary">Check</button>
+        </div>
+
+        <div class="split">
+          <div class="panel">
+            <h3>Score</h3>
+            <div class="meter">
+              <div class="meterBar" id="compatBar"></div>
+            </div>
+            <div id="compatScore" class="big muted">—</div>
+          </div>
+          <div class="panel">
+            <h3>Reading</h3>
+            <div id="compatText" class="result muted">Choose two signs and tap "Check".</div>
+            <div class="paywall" id="compatPaywall">
+              <div class="paywallText">Premium expands into a longer relationship-style report.</div>
+              <button class="secondary" id="btnUnlockCompat">Unlock Premium Report ($4.99)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LIVE -->
+    <section class="view hidden" id="view-live">
+      <h1>Live Experts</h1>
+      <p class="hint">Connect with a human reader (chat/call). Intro credits supported.</p>
+
+      <div class="card">
+        <div class="row">
+          <button class="secondary" id="btnAddCredits">Add Intro Credits ($10)</button>
+          <div class="credits">Credits: <span id="creditBalance">10</span></div>
+        </div>
+
+        <div id="expertList" class="grid"></div>
+
+        <div class="tiny muted">
+          Implementation note: wire this to Twilio/Agora/Daily for calls and Stripe for billing per minute.
+        </div>
+      </div>
+    </section>
+
+    <!-- PROFILE -->
+    <section class="view hidden" id="view-profile">
+      <h1>Profile</h1>
+      <div class="card">
+        <div class="row">
+          <label class="field">
+            <span>Display name</span>
+            <input id="displayName" type="text" placeholder="Guest" />
+          </label>
+          <button id="btnSaveProfile" class="primary">Save</button>
+        </div>
+
+        <h3>Saved Readings</h3>
+        <div id="savedReadings" class="result muted">None yet.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>© AstroPalm — Entertainment only</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

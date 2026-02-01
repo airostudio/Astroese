@@ -234,7 +234,6 @@
     <button class="tab active" data-route="palm">Palm Scan</button>
     <button class="tab" data-route="horoscope">Horoscope</button>
     <button class="tab" data-route="compat">Compatibility</button>
-    <button class="tab" data-route="live">Live Experts</button>
     <button class="tab" data-route="profile">Profile</button>
   </nav>
 
@@ -397,31 +396,6 @@
       </div>
     </section>
 
-    <!-- LIVE -->
-    <section class="view hidden" id="view-live">
-      <h1>Live Experts</h1>
-      <p class="hint">Connect with a human reader (chat/call). Credits required.</p>
-
-      <div class="card">
-        <div class="row">
-          <button class="secondary" id="btnAddCredits">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="16"/>
-              <line x1="8" y1="12" x2="16" y2="12"/>
-            </svg>
-            Buy Credits ($10)
-          </button>
-          <div class="credits">
-            <span class="creditsLabel">Your Credits:</span>
-            <span id="creditBalance" class="creditAmount">0</span>
-          </div>
-        </div>
-
-        <div id="expertList" class="grid"></div>
-      </div>
-    </section>
-
     <!-- PROFILE -->
     <section class="view hidden" id="view-profile">
       <h1>Profile</h1>
@@ -443,10 +417,6 @@
             <div class="stat">
               <span class="statValue" id="statReadings">0</span>
               <span class="statLabel">Readings</span>
-            </div>
-            <div class="stat">
-              <span class="statValue" id="statCredits">0</span>
-              <span class="statLabel">Credits</span>
             </div>
           </div>
 

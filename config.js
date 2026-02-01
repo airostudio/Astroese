@@ -16,8 +16,7 @@ const CONFIG = {
     PREMIUM_MONTHLY: 'price_monthly_premium',      // $7.99/month subscription
     PALM_UNLOCK: 'price_palm_unlock',              // $2.99 one-time
     HOROSCOPE_UNLOCK: 'price_horoscope_unlock',    // $1.99 one-time
-    COMPAT_UNLOCK: 'price_compat_unlock',          // $4.99 one-time
-    CREDITS_10: 'price_credits_10'                 // $10 for 10 credits
+    COMPAT_UNLOCK: 'price_compat_unlock'           // $4.99 one-time
   },
 
   // Backend API URL (for Stripe payment processing)
@@ -35,7 +34,6 @@ CREATE TABLE public.profiles (
   id UUID REFERENCES auth.users(id) PRIMARY KEY,
   display_name TEXT DEFAULT 'Guest',
   zodiac_sign TEXT,
-  credits INTEGER DEFAULT 10,
   is_premium BOOLEAN DEFAULT FALSE,
   premium_until TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),

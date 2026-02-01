@@ -11,8 +11,7 @@ const CONFIG = {
     PREMIUM_MONTHLY: 'price_monthly_premium',
     PALM_UNLOCK: 'price_palm_unlock',
     HOROSCOPE_UNLOCK: 'price_horoscope_unlock',
-    COMPAT_UNLOCK: 'price_compat_unlock',
-    CREDITS_10: 'price_credits_10'
+    COMPAT_UNLOCK: 'price_compat_unlock'
   }
 };
 
@@ -21,7 +20,6 @@ const state = {
   user: null,
   profile: null,
   premium: false,
-  credits: 0,
   palm: {
     file: null,
     dataUrl: null
@@ -116,7 +114,7 @@ async function signIn(email, password) {
   if (!supabase) {
     showToast('Demo mode - sign in simulated', 'info');
     state.user = { email, id: 'demo-user' };
-    state.profile = { display_name: 'Demo User', credits: 10, is_premium: false };
+    state.profile = { display_name: 'Demo User', is_premium: false };
     updateAuthUI(true);
     closeModal('authModal');
     return;
@@ -144,7 +142,7 @@ async function signUp(email, password, displayName, zodiacSign) {
   if (!supabase) {
     showToast('Demo mode - sign up simulated', 'info');
     state.user = { email, id: 'demo-user' };
-    state.profile = { display_name: displayName, credits: 10, is_premium: false, zodiac_sign: zodiacSign };
+    state.profile = { display_name: displayName, is_premium: false, zodiac_sign: zodiacSign };
     updateAuthUI(true);
     closeModal('authModal');
     return;
@@ -181,7 +179,6 @@ async function signOut() {
   state.user = null;
   state.profile = null;
   state.premium = false;
-  state.credits = 0;
   state.savedReadings = [];
   updateAuthUI(false);
   showToast('Signed out', 'info');
@@ -202,7 +199,6 @@ async function loadProfile() {
     if (data) {
       state.profile = data;
       state.premium = data.is_premium || false;
-      state.credits = data.credits || 0;
     }
 
     await loadSavedReadings();
@@ -280,7 +276,6 @@ function updateAuthUI(loggedIn) {
     $('profileLoggedIn').classList.add('hidden');
     $('profileLoggedOut').classList.remove('hidden');
   }
-  updateCreditsUI();
 }
 
 function updateProfileUI() {
@@ -300,7 +295,6 @@ function updateProfileUI() {
   const readings = state.savedReadings.length;
   $('statScans').textContent = palmScans;
   $('statReadings').textContent = readings;
-  $('statCredits').textContent = state.credits;
 }
 
 function updatePremiumUI() {
@@ -334,10 +328,6 @@ function updatePremiumUI() {
   if (!isPremium) {
     $('horoPremium').textContent = 'Upgrade to unlock premium readings.';
   }
-}
-
-function updateCreditsUI() {
-  $('creditBalance').textContent = state.credits;
 }
 
 // ========== MODAL FUNCTIONS ==========
@@ -520,10 +510,6 @@ function getPaymentOptions(type) {
         { icon: '💕', title: 'Premium Report', desc: 'Expanded relationship analysis', price: '$4.99', priceId: CONFIG.STRIPE_PRICES.COMPAT_UNLOCK, type: 'one_time' },
         { icon: '⭐', title: 'Go Premium', desc: 'Unlimited everything', price: '$7.99/mo', priceId: CONFIG.STRIPE_PRICES.PREMIUM_MONTHLY, type: 'subscription', recommended: true }
       ];
-    case 'credits':
-      return [
-        { icon: '💎', title: '10 Credits', desc: 'For live expert sessions', price: '$10', priceId: CONFIG.STRIPE_PRICES.CREDITS_10, type: 'credits' }
-      ];
     default:
       return [];
   }
@@ -536,9 +522,6 @@ async function handlePayment(priceId, type) {
     if (type === 'subscription') {
       state.premium = true;
       updatePremiumUI();
-    } else if (type === 'credits') {
-      state.credits += 10;
-      updateCreditsUI();
     }
     closeModal('paymentModal');
     return;
@@ -908,60 +891,6 @@ async function saveCompatReport(signA, signB, mode, score, text) {
   }
 }
 
-// ========== EXPERTS FUNCTIONS ==========
-const EXPERTS = [
-  { name: "Mina", specialties: "Palmistry • Love readings", rate: 2.49, status: "online" },
-  { name: "Arjun", specialties: "Birth charts • Compatibility", rate: 3.99, status: "online" },
-  { name: "Selene", specialties: "Career astrology • Timing", rate: 4.99, status: "busy" },
-  { name: "Kai", specialties: "Quick palm scan • Energy", rate: 1.99, status: "online" }
-];
-
-function renderExperts() {
-  const wrap = $("expertList");
-  wrap.innerHTML = "";
-
-  for (const ex of EXPERTS) {
-    const div = document.createElement("div");
-    div.className = "expert";
-
-    const badgeClass = ex.status === "online" ? "badge online" : "badge busy";
-    const badgeText = ex.status === "online" ? "Online" : "Busy";
-
-    div.innerHTML = `
-      <div class="expertTop">
-        <div>
-          <div style="font-weight:800">${ex.name}</div>
-          <div class="tiny muted">${ex.specialties}</div>
-        </div>
-        <div class="${badgeClass}">${badgeText}</div>
-      </div>
-      <div class="row" style="margin:0">
-        <div class="tiny muted">$${ex.rate.toFixed(2)}/min</div>
-        <div style="flex:1"></div>
-        <button class="primary" ${ex.status !== "online" ? "disabled" : ""} data-call="${ex.name}">
-          Start Session
-        </button>
-      </div>
-    `;
-    wrap.appendChild(div);
-  }
-
-  wrap.querySelectorAll("button[data-call]").forEach(btn => {
-    btn.addEventListener("click", () => startSession(btn.dataset.call));
-  });
-}
-
-function startSession(expertName) {
-  if (state.credits <= 0) {
-    showToast('You need credits to start a session', 'error');
-    showPaymentModal('credits');
-    return;
-  }
-  state.credits -= 1;
-  updateCreditsUI();
-  showToast(`Connecting to ${expertName}... (1 credit used)`, 'info');
-}
-
 // ========== SAVED READINGS ==========
 function renderSavedReadings() {
   const saved = state.savedReadings;
@@ -1070,7 +999,6 @@ function bindEvents() {
   $('btnUnlockPalm').addEventListener('click', () => showPaymentModal('palm'));
   $('btnUnlockHoro').addEventListener('click', () => showPaymentModal('horoscope'));
   $('btnUnlockCompat').addEventListener('click', () => showPaymentModal('compat'));
-  $('btnAddCredits').addEventListener('click', () => showPaymentModal('credits'));
 
   // Payment modal
   $('closePaymentModal').addEventListener('click', () => closeModal('paymentModal'));
@@ -1124,7 +1052,6 @@ async function boot() {
   initStripe();
   initSignSelects();
   bindEvents();
-  renderExperts();
 
   await checkAuth();
   updatePremiumUI();

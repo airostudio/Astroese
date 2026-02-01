@@ -2,11 +2,213 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#0b0d14" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>AstroPalm — Astrology & Palm Reading</title>
   <link rel="stylesheet" href="styles.css" />
+  <!-- Supabase Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Stripe.js -->
+  <script src="https://js.stripe.com/v3/"></script>
 </head>
 <body>
+  <!-- Auth Modal -->
+  <div id="authModal" class="modal hidden">
+    <div class="modalBackdrop"></div>
+    <div class="modalContent">
+      <button class="modalClose" id="closeAuthModal">&times;</button>
+      <div class="authContainer">
+        <div class="authHeader">
+          <div class="logo large">✦</div>
+          <h2>Welcome to AstroPalm</h2>
+          <p class="muted">Sign in to save your readings and unlock features</p>
+        </div>
+
+        <div id="authTabs" class="authTabs">
+          <button class="authTab active" data-auth="signin">Sign In</button>
+          <button class="authTab" data-auth="signup">Sign Up</button>
+        </div>
+
+        <!-- Sign In Form -->
+        <form id="signInForm" class="authForm">
+          <label class="field">
+            <span>Email</span>
+            <input type="email" id="signInEmail" required placeholder="your@email.com" />
+          </label>
+          <label class="field">
+            <span>Password</span>
+            <input type="password" id="signInPassword" required placeholder="••••••••" />
+          </label>
+          <button type="submit" class="primary fullWidth">Sign In</button>
+          <div id="signInError" class="errorMsg hidden"></div>
+        </form>
+
+        <!-- Sign Up Form -->
+        <form id="signUpForm" class="authForm hidden">
+          <label class="field">
+            <span>Display Name</span>
+            <input type="text" id="signUpName" required placeholder="Your name" />
+          </label>
+          <label class="field">
+            <span>Email</span>
+            <input type="email" id="signUpEmail" required placeholder="your@email.com" />
+          </label>
+          <label class="field">
+            <span>Password</span>
+            <input type="password" id="signUpPassword" required minlength="6" placeholder="Min 6 characters" />
+          </label>
+          <label class="field">
+            <span>Zodiac Sign (optional)</span>
+            <select id="signUpSign">
+              <option value="">Select your sign</option>
+              <option value="aries">Aries</option>
+              <option value="taurus">Taurus</option>
+              <option value="gemini">Gemini</option>
+              <option value="cancer">Cancer</option>
+              <option value="leo">Leo</option>
+              <option value="virgo">Virgo</option>
+              <option value="libra">Libra</option>
+              <option value="scorpio">Scorpio</option>
+              <option value="sagittarius">Sagittarius</option>
+              <option value="capricorn">Capricorn</option>
+              <option value="aquarius">Aquarius</option>
+              <option value="pisces">Pisces</option>
+            </select>
+          </label>
+          <button type="submit" class="primary fullWidth">Create Account</button>
+          <div id="signUpError" class="errorMsg hidden"></div>
+        </form>
+
+        <div class="authDivider">
+          <span>or continue as guest</span>
+        </div>
+        <button id="continueAsGuest" class="secondary fullWidth">Continue as Guest</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Camera Modal for Palm Scanning -->
+  <div id="cameraModal" class="modal hidden">
+    <div class="cameraContainer">
+      <div class="cameraHeader">
+        <button id="closeCameraModal" class="cameraClose">&times;</button>
+        <span class="cameraTitle">Scan Your Left Palm</span>
+        <button id="switchCamera" class="cameraSwitch">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M16 3h5v5M8 21H3v-5M21 3l-7 7M3 21l7-7"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="cameraViewport">
+        <video id="cameraVideo" autoplay playsinline></video>
+        <canvas id="cameraCanvas" class="hidden"></canvas>
+
+        <!-- Palm positioning guide overlay -->
+        <div class="palmGuide">
+          <svg viewBox="0 0 300 400" class="palmOutline">
+            <!-- Hand outline guide -->
+            <path d="M150 380
+                     C 80 380, 40 320, 40 250
+                     L 40 180
+                     C 40 160, 50 150, 65 150
+                     L 65 100
+                     C 65 85, 75 75, 90 75
+                     C 105 75, 115 85, 115 100
+                     L 115 140
+                     L 115 60
+                     C 115 45, 125 35, 140 35
+                     C 155 35, 165 45, 165 60
+                     L 165 130
+                     L 165 50
+                     C 165 35, 175 25, 190 25
+                     C 205 25, 215 35, 215 50
+                     L 215 140
+                     L 215 80
+                     C 215 65, 225 55, 240 55
+                     C 255 55, 265 65, 265 80
+                     L 265 250
+                     C 265 320, 220 380, 150 380 Z"
+                  fill="none"
+                  stroke="rgba(139,92,246,0.6)"
+                  stroke-width="3"
+                  stroke-dasharray="10,5"/>
+            <!-- Center palm area -->
+            <ellipse cx="150" cy="220" rx="70" ry="80"
+                     fill="none"
+                     stroke="rgba(34,197,94,0.5)"
+                     stroke-width="2"
+                     stroke-dasharray="5,5"/>
+          </svg>
+          <div class="guideText">Position your LEFT hand palm-up within the outline</div>
+        </div>
+
+        <!-- Captured image preview -->
+        <img id="capturedImage" class="capturedPreview hidden" alt="Captured palm" />
+      </div>
+
+      <div class="cameraControls">
+        <div class="cameraHint">
+          <span>Good lighting</span>
+          <span>•</span>
+          <span>Palm facing up</span>
+          <span>•</span>
+          <span>Fingers spread</span>
+        </div>
+
+        <div class="captureRow">
+          <button id="retakePhoto" class="secondary hidden">Retake</button>
+          <button id="captureBtn" class="captureButton">
+            <div class="captureInner"></div>
+          </button>
+          <button id="usePhoto" class="primary hidden">Use Photo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Modal -->
+  <div id="paymentModal" class="modal hidden">
+    <div class="modalBackdrop"></div>
+    <div class="modalContent">
+      <button class="modalClose" id="closePaymentModal">&times;</button>
+      <div class="paymentContainer">
+        <h2 id="paymentTitle">Unlock Premium</h2>
+        <p id="paymentDesc" class="muted">Get access to deeper readings and exclusive features</p>
+
+        <div id="paymentOptions" class="paymentOptions">
+          <!-- Populated by JS -->
+        </div>
+
+        <div id="paymentLoading" class="hidden">
+          <div class="spinner"></div>
+          <p>Redirecting to checkout...</p>
+        </div>
+
+        <div id="paymentError" class="errorMsg hidden"></div>
+
+        <div class="paymentSecure">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <span>Secure payment via Stripe</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loadingOverlay hidden">
+    <div class="spinner large"></div>
+    <p id="loadingText">Loading...</p>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div id="toastContainer" class="toastContainer"></div>
+
   <header class="topbar">
     <div class="brand">
       <div class="logo">✦</div>
@@ -16,7 +218,16 @@
       </div>
     </div>
 
-    <button id="btnPremium" class="pill">Premium: <span id="premiumState">OFF</span></button>
+    <div class="topbarRight">
+      <button id="btnPremium" class="pill premium-badge">
+        <span id="premiumIcon">⭐</span>
+        <span id="premiumState">Free</span>
+      </button>
+      <button id="btnAuth" class="authBtn">
+        <span id="authIcon">👤</span>
+        <span id="authText">Sign In</span>
+      </button>
+    </div>
   </header>
 
   <nav class="tabs">
@@ -32,20 +243,37 @@
     <section class="view" id="view-palm">
       <h1>AI Palm Scan</h1>
       <p class="hint">
-        Upload or take a photo of your palm. Results are for entertainment.
+        Scan your LEFT hand palm to reveal your lines. Results are for entertainment.
       </p>
 
       <div class="card">
-        <div class="row">
-          <input id="palmInput" type="file" accept="image/*" capture="environment" />
-          <button id="btnAnalyzePalm" class="primary">Analyze Palm</button>
+        <div class="row captureOptions">
+          <button id="btnOpenCamera" class="primary large">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+            Open Camera
+          </button>
+          <span class="orDivider">or</span>
+          <label class="uploadLabel">
+            <input id="palmInput" type="file" accept="image/*" />
+            <span class="secondary">Upload Photo</span>
+          </label>
         </div>
 
         <div class="split">
           <div class="panel">
             <h3>Preview</h3>
-            <div class="previewWrap">
-              <img id="palmPreview" alt="Palm preview" />
+            <div class="previewWrap" id="palmPreviewWrap">
+              <div class="previewPlaceholder" id="previewPlaceholder">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+                <span>Your palm photo will appear here</span>
+              </div>
+              <img id="palmPreview" alt="Palm preview" class="hidden" />
               <canvas id="palmOverlay"></canvas>
             </div>
             <div class="tiny muted">Tip: Use good lighting and keep the palm centered.</div>
@@ -54,13 +282,14 @@
           <div class="panel">
             <h3>Your Reading</h3>
             <div id="palmResult" class="result muted">
-              Upload a palm photo to begin.
+              Take or upload a palm photo to begin.
             </div>
+            <button id="btnAnalyzePalm" class="primary fullWidth hidden">Analyze Palm</button>
             <div class="paywall" id="palmPaywall">
               <div class="paywallText">
                 Premium unlocks deeper line details + "year ahead" forecast.
               </div>
-              <button class="secondary" id="btnUnlockPalm">Unlock Premium Palm ($2.99)</button>
+              <button class="secondary" id="btnUnlockPalm">Unlock Premium ($2.99)</button>
             </div>
           </div>
         </div>
@@ -109,15 +338,15 @@
 
         <div class="split">
           <div class="panel">
-            <h3>Free</h3>
+            <h3>Free Reading</h3>
             <div id="horoFree" class="result muted">Pick your sign and tap "Get".</div>
           </div>
           <div class="panel">
-            <h3>Premium</h3>
-            <div id="horoPremium" class="result muted">Premium is off.</div>
+            <h3>Premium Reading</h3>
+            <div id="horoPremium" class="result muted">Upgrade to unlock.</div>
             <div class="paywall" id="horoPaywall">
               <div class="paywallText">Premium adds a deeper message + lucky cues.</div>
-              <button class="secondary" id="btnUnlockHoro">Unlock Premium Horoscope ($1.99)</button>
+              <button class="secondary" id="btnUnlockHoro">Unlock Premium ($1.99)</button>
             </div>
           </div>
         </div>
@@ -161,7 +390,7 @@
             <div id="compatText" class="result muted">Choose two signs and tap "Check".</div>
             <div class="paywall" id="compatPaywall">
               <div class="paywallText">Premium expands into a longer relationship-style report.</div>
-              <button class="secondary" id="btnUnlockCompat">Unlock Premium Report ($4.99)</button>
+              <button class="secondary" id="btnUnlockCompat">Unlock Premium ($4.99)</button>
             </div>
           </div>
         </div>
@@ -171,19 +400,25 @@
     <!-- LIVE -->
     <section class="view hidden" id="view-live">
       <h1>Live Experts</h1>
-      <p class="hint">Connect with a human reader (chat/call). Intro credits supported.</p>
+      <p class="hint">Connect with a human reader (chat/call). Credits required.</p>
 
       <div class="card">
         <div class="row">
-          <button class="secondary" id="btnAddCredits">Add Intro Credits ($10)</button>
-          <div class="credits">Credits: <span id="creditBalance">10</span></div>
+          <button class="secondary" id="btnAddCredits">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="16"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+            Buy Credits ($10)
+          </button>
+          <div class="credits">
+            <span class="creditsLabel">Your Credits:</span>
+            <span id="creditBalance" class="creditAmount">0</span>
+          </div>
         </div>
 
         <div id="expertList" class="grid"></div>
-
-        <div class="tiny muted">
-          Implementation note: wire this to Twilio/Agora/Daily for calls and Stripe for billing per minute.
-        </div>
       </div>
     </section>
 
@@ -191,16 +426,85 @@
     <section class="view hidden" id="view-profile">
       <h1>Profile</h1>
       <div class="card">
-        <div class="row">
-          <label class="field">
-            <span>Display name</span>
-            <input id="displayName" type="text" placeholder="Guest" />
-          </label>
-          <button id="btnSaveProfile" class="primary">Save</button>
+        <div id="profileLoggedIn" class="hidden">
+          <div class="profileHeader">
+            <div class="avatar" id="profileAvatar">👤</div>
+            <div>
+              <div id="profileName" class="profileName">Guest</div>
+              <div id="profileEmail" class="profileEmail muted"></div>
+            </div>
+          </div>
+
+          <div class="profileStats">
+            <div class="stat">
+              <span class="statValue" id="statScans">0</span>
+              <span class="statLabel">Palm Scans</span>
+            </div>
+            <div class="stat">
+              <span class="statValue" id="statReadings">0</span>
+              <span class="statLabel">Readings</span>
+            </div>
+            <div class="stat">
+              <span class="statValue" id="statCredits">0</span>
+              <span class="statLabel">Credits</span>
+            </div>
+          </div>
+
+          <div class="profileSection">
+            <h3>Settings</h3>
+            <label class="field">
+              <span>Display name</span>
+              <input id="displayName" type="text" placeholder="Your name" />
+            </label>
+            <label class="field">
+              <span>Zodiac Sign</span>
+              <select id="profileSign">
+                <option value="">Not set</option>
+                <option value="aries">Aries</option>
+                <option value="taurus">Taurus</option>
+                <option value="gemini">Gemini</option>
+                <option value="cancer">Cancer</option>
+                <option value="leo">Leo</option>
+                <option value="virgo">Virgo</option>
+                <option value="libra">Libra</option>
+                <option value="scorpio">Scorpio</option>
+                <option value="sagittarius">Sagittarius</option>
+                <option value="capricorn">Capricorn</option>
+                <option value="aquarius">Aquarius</option>
+                <option value="pisces">Pisces</option>
+              </select>
+            </label>
+            <button id="btnSaveProfile" class="primary">Save Changes</button>
+          </div>
+
+          <div class="profileSection">
+            <h3>Subscription</h3>
+            <div id="subscriptionStatus" class="subscriptionCard">
+              <div class="subIcon">⭐</div>
+              <div>
+                <div class="subTitle">Free Plan</div>
+                <div class="subDesc muted">Limited features</div>
+              </div>
+              <button id="btnUpgrade" class="primary">Upgrade</button>
+            </div>
+          </div>
+
+          <div class="profileSection">
+            <h3>Recent Readings</h3>
+            <div id="savedReadings" class="result muted">No readings yet.</div>
+          </div>
+
+          <button id="btnSignOut" class="secondary fullWidth">Sign Out</button>
         </div>
 
-        <h3>Saved Readings</h3>
-        <div id="savedReadings" class="result muted">None yet.</div>
+        <div id="profileLoggedOut">
+          <div class="guestPrompt">
+            <div class="guestIcon">👤</div>
+            <h3>Sign in to save your readings</h3>
+            <p class="muted">Create an account to sync your palm scans, horoscopes, and compatibility reports across devices.</p>
+            <button id="btnProfileSignIn" class="primary">Sign In / Sign Up</button>
+          </div>
+        </div>
       </div>
     </section>
   </main>
@@ -209,6 +513,7 @@
     <span>© AstroPalm — Entertainment only</span>
   </footer>
 
-  <script src="app.js"></script>
+  <script src="config.js" type="module"></script>
+  <script src="app.js" type="module"></script>
 </body>
 </html>
